@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Llamada al 112</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+        #contenedor {
+            position: relative;          
+	    width: 320px;
+            margin: auto;
+        }
+        #imagen-movil {
+            width: 200%; /* Imagen aún más grande */
+            position: absolute;
+            top: 00px; /* Movemos la imagen más arriba para que no se corte */
+            left: -10%; /* Centramos mejor la imagen */
+            z-index: 1;
+        }
+        #llamada {
+            position: relative;
+            z-index: 2;
+            background-color:
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.1);
+            width: 250px; /* Tamaño fijo del teclado */
+            top: 150px; 
+            margin: auto;
+            margin-left: 40px; /* Desplazamos el teclado a la derecha */
+        }
+        #pantalla {
+            margin-bottom: 10px;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            min-height: 40px;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+        .keypad button {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .keypad button:active {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="contenedor">
+        <img id="imagen-movil" src="https://purepng.com/public/uploads/medium/purepng.com-phone-in-handphone-in-handhandheldpersonal-computermobileholding-smart-phonecell-phone-in-hand-1701528365987kg01i.png" alt="Móvil en mano">
+        
+        <div id="llamada">
+            <div id="pantalla">Marca un número para llamar.</div>
+            
+            <div class="keypad">
+                <button onclick="marcar(1)">1</button>
+                <button onclick="marcar(2)">2</button>
+                <button onclick="marcar(3)">3</button>
+                <button onclick="marcar(4)">4</button>
+                <button onclick="marcar(5)">5</button>
+                <button onclick="marcar(6)">6</button>
+                <button onclick="marcar(7)">7</button>
+                <button onclick="marcar(8)">8</button>
+                <button onclick="marcar(9)">9</button>
+                <button onclick="marcar('*')">*</button>
+                <button onclick="marcar(0)">0</button>
+                <button onclick="marcar('#')">#</button>
+            </div>
+
+            <button class="button" id="startBtn" onclick="iniciarLlamada()">Llamar</button>
+        </div>
+    </div>
+
+    <script>
+         let paso = 0;
+        const pantalla = document.getElementById("pantalla");
+        const respuestaDiv = document.getElementById("respuestaDiv");
+        const startBtn = document.getElementById("startBtn");
+        let numeroMarcado = "";
+
+        // Reconocimiento de voz
+        const reconocimientoVoz = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        reconocimientoVoz.lang = 'es-ES';
+        reconocimientoVoz.interimResults = false;
+        reconocimientoVoz.maxAlternatives = 1;
+
+        // Función para marcar números
+        function marcar(numero) {
+            numeroMarcado += numero;
+            pantalla.innerHTML = "Número marcado: " + numeroMarcado;
+        }
+
+        // Función para obtener el saludo según la hora del día
+        function obtenerSaludo() {
+            const hora = new Date().getHours();
+            if (hora < 12) {
+                return "¡Buenos días!";
+            } else if (hora < 20) {
+                return "¡Buenas tardes!";
+            } else {
+                return "¡Buenas noches!";
+            }
+        }
+
+        // Iniciar llamada al marcar 112
+        function iniciarLlamada() {
+            if (numeroMarcado === "112") {
+                // Mostrar "descolgar" y saludo
+                pantalla.innerHTML = "Llamada iniciada...";
+                speakQuestion(obtenerSaludo() + " 112, ¿qué ha pasado?");
+                startBtn.style.display = "none"; // Ocultar botón de inicio
+                siguientePregunta();
+            } else {
+                pantalla.innerHTML = "Por favor, marca el número 112 para iniciar la llamada.";
+            }
+        }
+
+        // Función para hacer preguntas
+        function siguientePregunta() {
+            if (paso === 1) {
+                pantalla.innerHTML = "¿Quién eres?";
+                speakQuestion("¿Quién eres?");
+            } else if (paso === 2) {
+                pantalla.innerHTML = "¿Está consciente? Dime si está consciente o no.";
+                speakQuestion("¿Está consciente?");
+            } else if (paso === 3) {
+                pantalla.innerHTML = "¿Respira? Responde con 'sí' o 'no'.";
+                speakQuestion("¿Respira?");
+            } else if (paso === 4) {
+                pantalla.innerHTML = "¿Sabes primeros auxilios para ayudar hasta que lleguemos?";
+                speakQuestion("¿Sabes primeros auxilios para ayudar hasta que lleguemos?");
+            } else if (paso === 5) {
+                pantalla.innerHTML = "¿Dónde está ocurriendo la emergencia? Dime el lugar.";
+                speakQuestion("¿Dónde está ocurriendo la emergencia?");
+            } else if (paso === 6) {
+                pantalla.innerHTML = "La ayuda está en camino. Gracias por tu colaboración.";
+                speakQuestion("La ayuda está en camino. Gracias por tu colaboración");
+                respuestaDiv.innerHTML = "";
+            }
+        }
+
+        // Función para hacer que el sistema lea las preguntas
+        function speakQuestion(question) {
+            const utterance = new SpeechSynthesisUtterance(question);
+            utterance.lang = "es-ES";
+            speechSynthesis.speak(utterance);
+            utterance.onend = () => {
+                grabarRespuesta();
+            };
+        }
+
+        // Iniciar el reconocimiento de voz
+        function grabarRespuesta() {
+            // Reiniciar el reconocimiento de voz en cada pregunta
+            reconocimientoVoz.stop();
+            reconocimientoVoz.start(); // Inicia el reconocimiento de voz
+
+            reconocimientoVoz.onstart = () => {
+                console.log("Reconocimiento de voz iniciado");
+                pantalla.innerHTML += "<br>Escuchando...";
+            };
+
+            reconocimientoVoz.onresult = (event) => {
+                const resultado = event.results[0][0].transcript;
+                procesarRespuesta(resultado);
+            };
+
+            reconocimientoVoz.onerror = (event) => {
+                pantalla.innerHTML = "Hubo un error al reconocer la voz, por favor, intenta nuevamente.";
+                repetirPregunta();
+            };
+        }
+
+        // Procesar las respuestas
+        function procesarRespuesta(respuesta) {
+            pantalla.innerHTML = `Has respondido: "${respuesta}"`;
+
+            // Pasar a la siguiente pregunta sin importar la respuesta
+            paso++;
+            setTimeout(siguientePregunta, 1500);
+        }
+
+        // Repetir la pregunta si no se entiende la respuesta
+        function repetirPregunta() {
+            pantalla.innerHTML += "<br>¿Hola? ¿Estás ahí? Por favor, repite.";
+            setTimeout(siguientePregunta, 1500);
+        }
+    </script>
+
+</body>
+</html>
